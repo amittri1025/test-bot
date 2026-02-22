@@ -109,7 +109,8 @@ bot.start((ctx) => {
 
 bot.on('text', async (ctx) => {
   const txt = ctx.message.text.trim();
-  if (txt.length < 8 || txt.startsWith('/')) return;
+
+  if (txt.length < 8 || txt.startsWith('/')) return ctx.reply('Oops Try again ! Please send a valid OLX URL or ad ID (9–11 digits).');
 
   if (!txt.includes('olx.in') && !/^\d{9,11}$/.test(txt)) {
     return ctx.reply('Please send a valid OLX URL or ad ID (9–11 digits).');
