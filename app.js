@@ -1,8 +1,11 @@
-// index.js
 require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const axios = require('axios');
 const pLimit = require('p-limit');
+const express = require('express');
+
+const app = express();
+app.use(express.json());
 
 const CONCURRENCY = 4;
 const limit = pLimit(CONCURRENCY);
@@ -17,7 +20,7 @@ if (!process.env.BOT_TOKEN) {
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-const phoneCache = new Map(); // adId → { phone, ts }
+const phoneCache = new Map();
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -172,13 +175,36 @@ bot.catch((err, ctx) => {
 
 // ─── Launch ───────────────────────────────────────────
 
-async function launch() {
-  console.log('Starting bot...');
-  await bot.launch();
-  console.log(`Bot @${bot.botInfo?.username ?? 'unknown'} is running`);
+//async function launch() {
+  // console.log('Starting bot...');
+  // await bot.launch();
+  // console.log(`Bot @${bot.botInfo?.username ?? 'unknown'} is running`);
 
-  process.once('SIGINT', () => bot.stop('SIGINT'));
-  process.once('SIGTERM', () => bot.stop('SIGTERM'));
+  // process.once('SIGINT', () => bot.stop('SIGINT'));
+  // process.once('SIGTERM', () => bot.stop('SIGTERM'));
+  
+//}
+
+const PORT = process.env.PORT || 3000;
+const WEBHOOK_PATH = `/bot${process.env.BOT_TOKEN}`;
+
+app.get('/', (req, res) => {
+  res.send('Bot is running');
+});
+
+app.use(bot.webhookCallback(WEBHOOK_PATH));
+
+async function launch() {
+  console.log('Starting server...');
+
+  app.listen(PORT, async () => {
+    console.log(`Server running on port ${PORT}`);
+
+    const webhookUrl = `https://${process.env.RENDER_EXTERNAL_HOSTNAME}${WEBHOOK_PATH}`;
+
+    await bot.telegram.setWebhook(webhookUrl);
+    console.log('Webhook set to:', webhookUrl);
+  });
 }
 
 launch();
